@@ -1,0 +1,81 @@
+package me.imrensitoh.apples.events;
+
+import me.imrensitoh.apples.*;
+import org.bukkit.entity.*;
+import org.bukkit.event.player.*;
+import me.imrensitoh.apples.utils.*;
+import org.bukkit.*;
+import org.bukkit.potion.*;
+import org.bukkit.configuration.file.*;
+import org.bukkit.inventory.*;
+import org.bukkit.inventory.meta.*;
+import java.util.*;
+import org.bukkit.event.*;
+
+public class gapple implements Listener
+{
+    private main plugin;
+    private HashMap<String, Long> cooldown;
+    
+    public gapple(final main plugin) {
+        this.plugin = plugin;
+        this.cooldown = new HashMap<String, Long>();
+    }
+    
+    public boolean isActive(final Player player, final String apple) {
+        return this.cooldown.containsKey(String.valueOf(player.getDisplayName()) + "-" + apple) && System.currentTimeMillis() < this.cooldown.get(String.valueOf(player.getDisplayName()) + "-" + apple);
+    }
+    
+    public long getMillisecondsLeft(final Player player, final String ID) {
+        if (this.cooldown.containsKey(String.valueOf(player.getDisplayName()) + "-" + ID)) {
+            return Math.max(this.cooldown.get(String.valueOf(player.getDisplayName()) + "-" + ID) - System.currentTimeMillis(), 0L);
+        }
+        return 0L;
+    }
+    
+    @EventHandler
+    public void comergap(final PlayerItemConsumeEvent event) {
+        final FileConfiguration config = this.plugin.getConfig();
+        String path = "";
+        final Player player = event.getPlayer();
+        final ItemStack item = event.getItem();
+        final ItemMeta meta = item.getItemMeta();
+        final List<String> lore = (List<String>)meta.getLore();
+        if (item.getType() == Material.GOLDEN_APPLE && lore != null && !lore.isEmpty()) {
+            path = "Apples.list";
+            final List<String> lista = (List<String>)config.getStringList(path);
+            List<String> efectos = new ArrayList<String>();
+            String ID = "";
+            for (int cc = 0; lista.size() > cc; ++cc) {
+                ID = config.getString("Apples." + lista.get(cc) + ".ID");
+                for (int c = 0; lore.size() > c; ++c) {
+                    if (lore.get(c).equals(ChatColor.translateAlternateColorCodes('&', "&7ID: " + ID))) {
+                        if (this.isActive(player, ID)) {
+                            player.sendMessage(Util.translate("&cDebes esperar " + Util.getRemaining(this.getMillisecondsLeft(player, ID), true)));
+                            event.setCancelled(true);
+                            return;
+                        }
+                        final String mensaje = config.getString("Apples." + lista.get(cc) + ".Mensaje");
+                        Bukkit.getServer().broadcastMessage(ChatColor.translateAlternateColorCodes('&', mensaje).replaceAll("%player%", player.getName()));
+                        this.cooldown.put(String.valueOf(player.getDisplayName()) + "-" + ID, System.currentTimeMillis() + config.getInt("Apples." + lista.get(cc) + ".Cooldown") * 1000);
+                        player.playSound(player.getLocation(), Sound.AMBIENCE_THUNDER, 3.0f, 1.0f);
+                        player.getWorld().strikeLightningEffect(player.getLocation());
+                        for (int i = 0; lista.size() > i; ++i) {
+                            efectos = (List<String>)config.getStringList("Apples." + lista.get(cc) + ".Efectos");
+                            for (int i2 = 0; efectos.size() > i2; ++i2) {
+                                String[] separacion = new String[3];
+                                separacion = efectos.get(i2).split(";");
+                                final int level = Integer.valueOf(separacion[1]) - 1;
+                                final int tiempo = Integer.valueOf(separacion[2]) * 1000;
+                                if (player.hasPotionEffect(PotionEffectType.getByName(separacion[0]))) {
+                                    player.removePotionEffect(PotionEffectType.getByName(separacion[0]));
+                                }
+                                player.addPotionEffect(new PotionEffect(PotionEffectType.getByName(separacion[0]), tiempo, level));
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
