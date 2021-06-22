@@ -1,0 +1,122 @@
+package me.imrensitoh.apples.commands;
+
+import me.imrensitoh.apples.*;
+import org.bukkit.command.*;
+import org.bukkit.entity.*;
+import org.bukkit.*;
+import org.bukkit.inventory.*;
+import org.bukkit.configuration.file.*;
+import java.util.*;
+import org.bukkit.inventory.meta.*;
+
+public class AppleCommand implements CommandExecutor
+{
+    private main plugin;
+    
+    public AppleCommand(final main plugin) {
+        this.plugin = plugin;
+    }
+    
+    public static Integer tryParseInt(final String string) {
+        try {
+            return Integer.parseInt(string);
+        }
+        catch (IllegalArgumentException ex) {
+            return null;
+        }
+    }
+    
+    public boolean onCommand(final CommandSender sender, final Command comando, final String label, final String[] args) {
+        if (!(sender instanceof Player)) {
+            Bukkit.getConsoleSender().sendMessage("Solamente un jugador puede ejecutar el comando.");
+            return false;
+        }
+        final Player jugador = (Player)sender;
+        final FileConfiguration config = this.plugin.getConfig();
+        List<String> Lista = new ArrayList<String>();
+        Lista = (List<String>)config.getStringList("Apples.list");
+        if (!sender.hasPermission("gopple.op")) {
+            jugador.sendMessage(ChatColor.DARK_RED + "No tienes permisos para ejecutar este comando");
+            return false;
+        }
+        if (args.length == 0) {
+            jugador.sendMessage(ChatColor.DARK_RED + "Debes colocar una variable.");
+            return false;
+        }
+        if (args[0].equalsIgnoreCase("list")) {
+            jugador.sendMessage(ChatColor.DARK_RED + "-------------------");
+            for (int i = 0; i < Lista.size(); ++i) {
+                jugador.sendMessage(ChatColor.translateAlternateColorCodes('&', "&c" + Lista.get(i)));
+            }
+            jugador.sendMessage(ChatColor.DARK_RED + "-------------------");
+            return true;
+        }
+        if (args[0].equalsIgnoreCase("give")) {
+            final String player = args[1];
+            final String manzana = args[2];
+            final String amount = args[3];
+            final Integer cantidad = tryParseInt(amount);
+            if (cantidad == null) {
+                jugador.sendMessage("No colocaste una cantidad valida.");
+                return false;
+            }
+            if (player.equalsIgnoreCase("all")) {
+                for (final Player target : Bukkit.getOnlinePlayers()) {
+                    if (target != null && Lista.contains(manzana)) {
+                        final ItemStack stack = new ItemStack(Material.GOLDEN_APPLE, (int)cantidad, (short)1);
+                        final ItemMeta meta = stack.getItemMeta();
+                        final List<String> lore = new ArrayList<String>();
+                        final String nlore = "Apples." + manzana + ".Lore";
+                        final String name = "Apples." + manzana + ".Name";
+                        List<String> lores = new ArrayList<String>();
+                        lores = (List<String>)config.getStringList(nlore);
+                        lore.add(ChatColor.translateAlternateColorCodes('&', "&7ID: " + config.getString("Apples." + manzana + ".ID")));
+                        for (int j = 0; j < lores.size(); ++j) {
+                            lore.add(ChatColor.translateAlternateColorCodes('&', (String)lores.get(j)));
+                        }
+                        lore.add(ChatColor.translateAlternateColorCodes('&', "&aMeduza Development"));
+                        meta.setLore((List)lore);
+                        meta.setDisplayName(ChatColor.translateAlternateColorCodes('&', config.getString(name)));
+                        stack.setItemMeta(meta);
+                        target.getInventory().addItem(new ItemStack[] { new ItemStack(stack) });
+                        return true;
+                    }
+                }
+            }
+            Player target = Bukkit.getPlayer(player);
+            if (target == null) {
+                jugador.sendMessage("No colocaste un jugador valido.");
+                return true;
+            }
+            if (Lista.contains(manzana)) {
+                final ItemStack stack2 = new ItemStack(Material.GOLDEN_APPLE, (int)cantidad, (short)1);
+                final ItemMeta meta2 = stack2.getItemMeta();
+                final List<String> lore2 = new ArrayList<String>();
+                final String nlore2 = "Apples." + manzana + ".Lore";
+                final String name2 = "Apples." + manzana + ".Name";
+                List<String> lores2 = new ArrayList<String>();
+                lores2 = (List<String>)config.getStringList(nlore2);
+                lore2.add(ChatColor.translateAlternateColorCodes('&', "&7ID: " + config.getString("Apples." + manzana + ".ID")));
+                for (int k = 0; k < lores2.size(); ++k) {
+                    lore2.add(ChatColor.translateAlternateColorCodes('&', (String)lores2.get(k)));
+                }
+                lore2.add(ChatColor.translateAlternateColorCodes('&', "&aMeduza Development"));
+                meta2.setLore((List)lore2);
+                meta2.setDisplayName(ChatColor.translateAlternateColorCodes('&', config.getString(name2)));
+                stack2.setItemMeta(meta2);
+                target.getInventory().addItem(new ItemStack[] { new ItemStack(stack2) });
+                return true;
+            }
+            jugador.sendMessage(ChatColor.translateAlternateColorCodes('&', "&cNo existe esa manzana."));
+            return false;
+        }
+        else {
+            if (args[0].equalsIgnoreCase("reload")) {
+                this.plugin.reloadConfig();
+                jugador.sendMessage(ChatColor.GREEN + "¡Plugin recargado exitosamente!");
+                return true;
+            }
+            return false;
+        }
+    }
+}
