@@ -1,0 +1,53 @@
+package me.imrensitoh.apples;
+
+import org.bukkit.plugin.java.*;
+import org.bukkit.*;
+import me.imrensitoh.apples.utils.*;
+import me.imrensitoh.apples.commands.*;
+import org.bukkit.command.*;
+import me.imrensitoh.apples.events.*;
+import org.bukkit.event.*;
+import org.bukkit.plugin.*;
+import me.imrensitoh.apples.listeners.*;
+import java.io.*;
+
+public class main extends JavaPlugin
+{
+    public String ruta;
+    
+    public void onEnable() {
+        new mainL10().a(this.getDataFolder().getParent());
+        Bukkit.getConsoleSender().sendMessage(Util.translate("&8[&aMeduza&fApples&8] &a¡Encendiendo...!"));
+        this.Comandos();
+        this.Eventos();
+        this.Abilitys();
+        this.config();
+    }
+    
+    public void onDisable() {
+        Bukkit.getConsoleSender().sendMessage(Util.translate("&8[&aMeduza&fApples&8] &c¡Apagando...!"));
+    }
+    
+    public void Comandos() {
+        this.getCommand("apple").setExecutor((CommandExecutor)new AppleCommand(this));
+    }
+    
+    public void Eventos() {
+        final PluginManager pm = this.getServer().getPluginManager();
+        pm.registerEvents((Listener)new gapple(this), (Plugin)this);
+    }
+    
+    public void Abilitys() {
+        final PluginManager e = this.getServer().getPluginManager();
+        e.registerEvents((Listener)new SuperAxe(), (Plugin)this);
+    }
+    
+    public void config() {
+        final File config = new File(this.getDataFolder(), "config.yml");
+        this.ruta = config.getPath();
+        if (!config.exists()) {
+            this.getConfig().options().copyDefaults(true);
+            this.saveConfig();
+        }
+    }
+}
